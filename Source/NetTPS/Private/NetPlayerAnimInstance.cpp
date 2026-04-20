@@ -20,11 +20,28 @@ void UNetPlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	{
 		mySpeed = FVector::DotProduct(player->GetVelocity(), player->GetActorForwardVector());
 		myDirection = FVector::DotProduct(player->GetVelocity(), player->GetActorRightVector());
+		
+		bHasPistol = player->bHasPistol;
 	}
 
 
 
 
 
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	
 }

@@ -11,6 +11,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 #include "NetTPS.h"
+#include "Kismet/GameplayStatics.h"
 
 ANetTPSCharacter::ANetTPSCharacter()
 {
@@ -54,6 +55,8 @@ ANetTPSCharacter::ANetTPSCharacter()
 
 	GunComp = CreateDefaultSubobject<USceneComponent>(TEXT("GunComp"));
 	GunComp->SetupAttachment(GetMesh(), TEXT("HandGrip_R"));
+	GunComp->SetRelativeLocation(FVector(0.824356f,8.975311f,3.870210f));
+	GunComp->SetRelativeRotation(FRotator(0.0f, 0.0f, 12.399401f));
 
 
 
@@ -65,9 +68,32 @@ ANetTPSCharacter::ANetTPSCharacter()
 
 
 
+	
+	
+	
+}
 
-
-
+void ANetTPSCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+	
+	// 총 검색
+	TArray<AActor*> allActors;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AActor::StaticClass(), allActors);
+	for ( auto tempPistol : allActors )
+	{
+		if ( tempPistol->GetName().Contains("BP_Pistol") )
+		{
+			pistolActors.Add(tempPistol);
+		}
+	}
+	
+	
+	
+	
+	
+	
+	
 	
 	
 	
@@ -88,6 +114,12 @@ void ANetTPSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
 		// Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ANetTPSCharacter::Look);
+		
+		// TakePistol
+		EnhancedInputComponent->BindAction(TakePistolAction, ETriggerEvent::Started, this, &ANetTPSCharacter::TakePistol);
+		
+		// ReleasePistol
+		EnhancedInputComponent->BindAction(ReleaseAction, ETriggerEvent::Started, this, &ANetTPSCharacter::ReleasePistol);
 	}
 	else
 	{
@@ -154,3 +186,150 @@ void ANetTPSCharacter::DoJumpEnd()
 	// signal the character to stop jumping
 	StopJumping();
 }
+
+void ANetTPSCharacter::TakePistol(const FInputActionValue& Value)
+{
+	// 총을 소유하지 않고 있다면 범위 안에 있는 총을 잡는다.
+	
+	// 필요속성 : 총 소유 여부, 소유중인 총, 총 검색 범위
+	// 1. 총을 잡고 있지 않다면
+	if ( bHasPistol )
+	{
+		return;
+	}
+	
+	// 2. 월드에 있는 총을 모두 조사한다.
+	for ( auto pistolActor : pistolActors )
+	{
+		// 3. 만약 총의 소유자가 있다면 검사하지 않는다.
+		if ( pistolActor->GetOwner() != nullptr )
+		{
+			continue;
+		}
+
+		// 4. 총과의 거리를 구한다.
+		float Distance = FVector::Dist(GetActorLocation(), pistolActor->GetActorLocation());
+		
+		// 5. 거리가 범위 안에 있다면
+		if ( Distance > DistanceToGun )
+		{
+			continue;
+		}
+		
+		// 6. 소유중인 총으로 등록
+		ownedPistol = pistolActor;
+		
+		// 7. 총의 소유자를 자신으로 등록
+		ownedPistol->SetOwner(this);
+		
+		// 8. 총 소유 상태로 변경
+		bHasPistol = true;
+		
+		AttachPistol(pistolActor);
+		
+		break;
+	}
+	
+	
+	
+}
+
+void ANetTPSCharacter::AttachPistol(AActor* pistolActor)
+{
+	if ( pistolActor == nullptr )
+	{
+		return;
+	}
+	
+	auto meshComp = pistolActor->GetComponentByClass<UStaticMeshComponent>();
+	meshComp->SetSimulatePhysics(false);
+	meshComp->AttachToComponent(GunComp, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+}
+
+void ANetTPSCharacter::ReleasePistol(const FInputActionValue& Value)
+{
+	// 총을 잡고 있지 않다면 처리하지 않는다.
+	if ( !bHasPistol )
+	{
+		return;
+	}
+	
+	// 총 소유시
+	if ( ownedPistol )
+	{
+		// 총 분리
+		DetachPistol(ownedPistol);
+		// 미소유로 설정
+		bHasPistol = false;
+		ownedPistol->SetOwner(nullptr);
+		ownedPistol = nullptr;		
+	}
+}
+
+void ANetTPSCharacter::DetachPistol(AActor* pistolActor)
+{
+	auto meshComp = pistolActor->GetComponentByClass<UStaticMeshComponent>();
+	meshComp->SetSimulatePhysics(true);
+	meshComp->DetachFromComponent(FDetachmentTransformRules::KeepRelativeTransform);	
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

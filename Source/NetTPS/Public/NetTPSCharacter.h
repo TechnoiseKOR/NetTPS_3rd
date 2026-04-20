@@ -53,6 +53,8 @@ public:
 
 	/** Constructor */
 	ANetTPSCharacter();	
+	
+	virtual void BeginPlay() override;
 
 protected:
 
@@ -99,8 +101,73 @@ public:
 	UPROPERTY(VisibleAnywhere)
 	class USceneComponent* GunComp;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input")
+	UInputAction* TakePistolAction;
+	
+	// 필요속성 : 총 소유 여부, 소유중인 총, 총 검색 범위
+	bool bHasPistol = false;
+	
+	// 소유중인 총
+	UPROPERTY()
+	AActor* ownedPistol = nullptr;
+	
+	// 총 검색 범위
+	UPROPERTY(EditAnywhere, Category="Gun")
+	float DistanceToGun = 200.0f;
+	
+	// 월드에 배치된 총들
+	UPROPERTY()
+	TArray<AActor*> pistolActors;
+	
+	
+	
+	
+	
+	
+public:	
+	void TakePistol(const FInputActionValue& Value);
 
+	// 총을 컴포넌트에 붙이기
+	void AttachPistol(AActor* pistolActor);
+	
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input")
+	UInputAction* ReleaseAction;
+	
+	// 총 놓기입력처리 함수
+	void ReleasePistol(const FInputActionValue& Value);
 
+	// 총을 컴포넌트에서 분리
+	void DetachPistol(AActor* pistolActor);
 	
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
