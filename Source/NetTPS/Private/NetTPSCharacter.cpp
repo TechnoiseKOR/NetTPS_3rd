@@ -10,7 +10,10 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
+#include "MainUI.h"
+#include "NetPlayerAnimInstance.h"
 #include "NetTPS.h"
+#include "Blueprint/UserWidget.h"
 #include "Kismet/GameplayStatics.h"
 
 ANetTPSCharacter::ANetTPSCharacter()
@@ -88,7 +91,7 @@ void ANetTPSCharacter::BeginPlay()
 		}
 	}
 	
-	
+	InitUIWidget();
 	
 	
 	
@@ -120,6 +123,14 @@ void ANetTPSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		
 		// ReleasePistol
 		EnhancedInputComponent->BindAction(ReleaseAction, ETriggerEvent::Started, this, &ANetTPSCharacter::ReleasePistol);
+		
+		// Fire
+		EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Started, this, &ANetTPSCharacter::Fire);
+		
+		// Reload
+		EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Started, this, &ANetTPSCharacter::ReloadPistol);
+		
+		
 	}
 	else
 	{
@@ -244,6 +255,7 @@ void ANetTPSCharacter::AttachPistol(AActor* pistolActor)
 	auto meshComp = pistolActor->GetComponentByClass<UStaticMeshComponent>();
 	meshComp->SetSimulatePhysics(false);
 	meshComp->AttachToComponent(GunComp, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+	mainUI->ShowCrosshair(true);
 }
 
 void ANetTPSCharacter::ReleasePistol(const FInputActionValue& Value)
@@ -270,7 +282,110 @@ void ANetTPSCharacter::DetachPistol(AActor* pistolActor)
 {
 	auto meshComp = pistolActor->GetComponentByClass<UStaticMeshComponent>();
 	meshComp->SetSimulatePhysics(true);
-	meshComp->DetachFromComponent(FDetachmentTransformRules::KeepRelativeTransform);	
+	meshComp->DetachFromComponent(FDetachmentTransformRules::KeepRelativeTransform);
+	mainUI->ShowCrosshair(false);
+}
+
+void ANetTPSCharacter::Fire(const FInputActionValue& Value)
+{	
+	// 총을 들고 있지 않다면 처리하지 않는다.
+	// 총알이 0개면 처리하지 않는다.
+	if ( !bHasPistol || BulletCount <= 0 || IsReloading )
+	{
+		return;
+	}	
+	
+	// 총알 제거
+	BulletCount--;
+	mainUI->PopBullet(BulletCount);
+	
+	// Fire 애니메이션 재생
+	auto anim = Cast<UNetPlayerAnimInstance>(GetMesh()->GetAnimInstance());
+	if ( anim != nullptr )
+	{
+		anim->PlayFireAnimation();
+	}
+	
+	// 총쏘기
+	FHitResult hitInfo;
+	FVector startPos = FollowCamera->GetComponentLocation();
+	FVector endPos = startPos + FollowCamera->GetForwardVector() * 10000.0f;
+	FCollisionQueryParams params;
+	params.AddIgnoredActor(this);
+	bool bHit = GetWorld()->LineTraceSingleByChannel(hitInfo, startPos, endPos, ECC_Visibility, params);	
+	
+	if ( bHit )
+	{
+		// 맞은 부위에 파티클 표시
+		if ( GunEffect )
+		{
+			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), GunEffect, hitInfo.Location, FRotator(), true);
+		}
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+}
+
+void ANetTPSCharacter::InitUIWidget()
+{
+	if ( mainUIWidget )
+	{
+		mainUI = Cast<UMainUI>(CreateWidget(GetWorld(), mainUIWidget));
+		mainUI->AddToViewport();
+		mainUI->ShowCrosshair(false);
+		
+		BulletCount = MaxBulletCount;
+		// 총알추가
+		for ( int i = 0; i < BulletCount; ++i )
+		{
+			mainUI->AddBullet();
+		}
+	}
+}
+
+void ANetTPSCharacter::ReloadPistol(const FInputActionValue& Value)
+{
+	// 총 소지중이 아니라면 아무 처리하지 않는다.
+	if ( !bHasPistol || IsReloading )
+	{
+		return;
+	}
+	
+	// 재장전 애니메이션 재생
+	auto anim = Cast<UNetPlayerAnimInstance>(GetMesh()->GetAnimInstance());
+	anim->PlayReloadAnimation();
+	
+	IsReloading = true;
+}
+
+void ANetTPSCharacter::InitAmmoUI()
+{
+	// 총알 개수 초기화
+	BulletCount = MaxBulletCount;
+	
+	if ( mainUI )
+	{
+		// 총알 UI 제거
+		mainUI->RemoveAllAmmo();
+		
+		// 총알 UI 다시 세팅
+		for ( int i = 0; i < MaxBulletCount; i++ )
+		{
+			mainUI->AddBullet();
+		}		
+	}
+	// 재장전 완료상태로 처리
+	IsReloading = false;
 }
 
 

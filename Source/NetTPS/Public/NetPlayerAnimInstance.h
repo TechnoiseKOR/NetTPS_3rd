@@ -30,6 +30,27 @@ public:
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 
 
+public:
+	// 총쏘기에서 사용할 몽타주
+	UPROPERTY(EditDefaultsOnly, Category="Anim")
+	class UAnimMontage* FireMontage;
+	
+	// 총쏘기 애니메이션 재생
+	void PlayFireAnimation();
+	
+	// 회전값 기억변수
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="MyAnimSettings")
+	float pitchAngle;
+	
+	// 재장전 몽타주
+	UPROPERTY(EditDefaultsOnly, Category="Anim")
+	class UAnimMontage* ReloadMontage;
+	// 재장전 애니메이션 재생
+	void PlayReloadAnimation();
+	
+	// 재장전 애니메이션 노티파이이벤트
+	UFUNCTION()
+	void AnimNotify_OnReloadFinish();
 
 
 

@@ -140,6 +140,50 @@ public:
 	// 총을 컴포넌트에서 분리
 	void DetachPistol(AActor* pistolActor);
 	
+	// 총쏘기 입력액션
+	UPROPERTY(EditAnywhere, blueprintReadOnly, Category="Input")
+	UInputAction* FireAction;
+	
+	// 총쏘기 처리 함수
+	void Fire(const FInputActionValue& Value);
+	
+	// 피격 파티클
+	UPROPERTY(EditDefaultsOnly, Category="Gun")
+	class UParticleSystem* GunEffect;
+	
+	// 사용할 위젯 클래스
+	UPROPERTY(EditDefaultsOnly, Category="UI")
+	TSubclassOf<class UMainUI> mainUIWidget;
+	// mainUIWidget 으로 부터 만들어진 인스턴스
+	UPROPERTY()
+	class UMainUI* mainUI;
+	
+	// UI 초기화 함수
+	void InitUIWidget();
+	
+	// 최대 총알개수
+	UPROPERTY(EditAnywhere, Category="Bullet")
+	int32 MaxBulletCount = 10;
+	// 남은 총알개수
+	int32 BulletCount = MaxBulletCount;
+	
+	
+	// 재장전에서 사용할 입력액션
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input")
+	UInputAction* ReloadAction;
+	
+	// 재장전 입력처리 함수
+	void ReloadPistol(const FInputActionValue& Value);
+	
+	// 총알 UI 초기화 함수
+	void InitAmmoUI();
+	// 재장전 중인지 기억
+	bool IsReloading = false;
+	
+	
+	
+	
+	
 };
 
 
