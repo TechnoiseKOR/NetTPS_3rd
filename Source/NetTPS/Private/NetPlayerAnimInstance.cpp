@@ -35,7 +35,6 @@ void UNetPlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	
 	
 	
-	
 }
 
 void UNetPlayerAnimInstance::PlayFireAnimation()

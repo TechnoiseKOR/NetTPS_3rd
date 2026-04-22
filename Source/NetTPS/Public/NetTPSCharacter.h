@@ -202,6 +202,10 @@ public:
 	bool isDead = false;
 	
 	
+public:
+	virtual void Tick(float DeltaSeconds) override;
+	// 네트워크 상태로그 출력함수
+	void PrintNetLog();
 	
 };
 

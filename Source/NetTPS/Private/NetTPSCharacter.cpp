@@ -20,6 +20,8 @@
 
 ANetTPSCharacter::ANetTPSCharacter()
 {
+	PrimaryActorTick.bCanEverTick = true;
+	
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 		
@@ -442,6 +444,32 @@ void ANetTPSCharacter::DamageProcess()
 	{
 		isDead = true;
 	}
+	
+	
+}
+
+void ANetTPSCharacter::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+	
+	PrintNetLog();
+}
+
+void ANetTPSCharacter::PrintNetLog()
+{
+	const FString conStr = GetNetConnection() != nullptr ? TEXT("Valid Connection") : TEXT("Invalid Connection");
+		
+	const FString logStr = FString::Printf(TEXT("Connection : %s\nLocalRole : %s\nRemoteRole : %s"), *conStr, *LOCALROLE, *REMOTEROLE);
+	
+	DrawDebugString( GetWorld(), GetActorLocation() + FVector::UpVector * 100.0f, logStr, nullptr, FColor::White, 0, true, 1);
+	
+	/*
+	const FString ownerName = GetOwner() != nullptr ? GetOwner()->GetName() : TEXT("No Owner");
+	
+	const FString logStr = FString::Printf(TEXT("Connection : %s\nOwnerName : %s"), *conStr, *ownerName);
+	
+	DrawDebugString( GetWorld(), GetActorLocation() + FVector::UpVector * 100.0f, logStr, nullptr, FColor::White, 0, true, 1);
+	*/
 }
 
 
