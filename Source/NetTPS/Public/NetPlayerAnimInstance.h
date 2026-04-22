@@ -51,6 +51,11 @@ public:
 	// 재장전 애니메이션 노티파이이벤트
 	UFUNCTION()
 	void AnimNotify_OnReloadFinish();
+	
+	
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="MyAnimSettings")
+	bool isDead = false;
 
 
 

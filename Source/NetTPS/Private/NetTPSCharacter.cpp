@@ -9,11 +9,13 @@
 #include "GameFramework/Controller.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "HealthBar.h"
 #include "InputActionValue.h"
 #include "MainUI.h"
 #include "NetPlayerAnimInstance.h"
 #include "NetTPS.h"
 #include "Blueprint/UserWidget.h"
+#include "Components/WidgetComponent.h"
 #include "Kismet/GameplayStatics.h"
 
 ANetTPSCharacter::ANetTPSCharacter()
@@ -62,7 +64,9 @@ ANetTPSCharacter::ANetTPSCharacter()
 	GunComp->SetRelativeRotation(FRotator(0.0f, 0.0f, 12.399401f));
 
 
-
+	// HealthBar Component
+	hpUIComp = CreateDefaultSubobject<UWidgetComponent>(TEXT("HealthBar"));
+	hpUIComp->SetupAttachment(GetMesh());
 
 
 
@@ -321,6 +325,14 @@ void ANetTPSCharacter::Fire(const FInputActionValue& Value)
 		{
 			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), GunEffect, hitInfo.Location, FRotator(), true);
 		}
+		
+		// 맞은 대상이 상대방일 경우 데미지 처리
+		auto otherPlayer = Cast<ANetTPSCharacter>(hitInfo.GetActor());
+		if ( otherPlayer )
+		{
+			otherPlayer->DamageProcess();
+		}
+		
 	}
 	
 	
@@ -338,6 +350,13 @@ void ANetTPSCharacter::Fire(const FInputActionValue& Value)
 
 void ANetTPSCharacter::InitUIWidget()
 {
+	// Player 가 제어중이 아니라면 처리하지 않는다.
+	auto pc = Cast<APlayerController>(Controller);
+	if ( pc == nullptr )
+	{
+		return;
+	}
+	
 	if ( mainUIWidget )
 	{
 		mainUI = Cast<UMainUI>(CreateWidget(GetWorld(), mainUIWidget));
@@ -386,6 +405,43 @@ void ANetTPSCharacter::InitAmmoUI()
 	}
 	// 재장전 완료상태로 처리
 	IsReloading = false;
+}
+
+float ANetTPSCharacter::GetHP()
+{
+	return hp;
+}
+
+void ANetTPSCharacter::SetHP(float value)
+{
+	hp = value;
+	// UI 에 할당할 퍼센트 계산
+	float percent = hp / MaxHP;
+	
+	if ( mainUI )
+	{
+		mainUI->HP = percent;
+	}
+	else
+	{
+		auto hpUI = Cast<UHealthBar>(hpUIComp->GetWidget());
+		if ( hpUI )
+		{
+			hpUI->HP = percent;			
+		}
+	}	
+}
+
+void ANetTPSCharacter::DamageProcess()
+{
+	// 체력을 감소시킨다.
+	HP -= 1.0f;	
+	
+	// 사망처리 체크
+	if ( HP <= 0.0f )
+	{
+		isDead = true;
+	}
 }
 
 

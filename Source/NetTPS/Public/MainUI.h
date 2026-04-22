@@ -37,6 +37,9 @@ public:
 	// 모든 총알UI 제거
 	void RemoveAllAmmo();
 	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="HP")
+	float HP = 1.0f;
+	
 };
 
 

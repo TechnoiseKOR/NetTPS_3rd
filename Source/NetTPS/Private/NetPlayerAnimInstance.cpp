@@ -25,7 +25,11 @@ void UNetPlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		pitchAngle = -player->GetBaseAimRotation().GetNormalized().Pitch;
 		pitchAngle = FMath::Clamp(pitchAngle, -60.0f, 60.0f);
 		
+		// 총소유 여부 적용
 		bHasPistol = player->bHasPistol;
+		
+		// 사망 여부 적용
+		isDead = player->isDead;
 	}
 
 	

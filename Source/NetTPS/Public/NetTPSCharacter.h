@@ -180,7 +180,26 @@ public:
 	// 재장전 중인지 기억
 	bool IsReloading = false;
 	
+	// 플레이어 체력
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="HP")
+	float MaxHP = 3.0f;
+	// 현재 체력
+	UPROPERTY(BlueprintReadOnly, Category="HP")
+	float hp = MaxHP;
 	
+	__declspec(property(get=GetHP, put=SetHP)) float HP;
+	float GetHP();
+	void SetHP(float value);
+	
+	
+	UPROPERTY(VisibleAnywhere)
+	class UWidgetComponent* hpUIComp;
+	
+	// 피격처리
+	void DamageProcess();
+	
+	// 사망여부
+	bool isDead = false;
 	
 	
 	
