@@ -34,6 +34,17 @@ public:
 	UPROPERTY(EditAnywhere)
 	float searchDistance = 200.0f;
 	
+	// Owner설정
+	void FindOwner();
+	
+	
+	// 회전 값 동기화 변수
+	UPROPERTY(ReplicatedUsing=OnRep_RotYaw)
+	float RotYaw = 0.0f;
+	
+	UFUNCTION()
+	void OnRep_RotYaw();
+	
 	
 	
 	
