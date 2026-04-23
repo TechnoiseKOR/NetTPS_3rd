@@ -166,6 +166,10 @@ void ANetActor::OnRep_ChangeMatColor()
 void ANetActor::MulticastRPC_ChangeColor_Implementation(
 	const FLinearColor newColor)
 {
+	if ( Mat )
+	{
+		Mat->SetVectorParameterValue(TEXT("FloorColor"), newColor);
+	}
 }
 
 void ANetActor::ClientRPC_ChangeColor_Implementation(
@@ -186,7 +190,8 @@ void ANetActor::ServerRPC_ChangeColor_Implementation(
 		Mat->SetVectorParameterValue(TEXT("FloorColor"), newColor);
 	}
 	*/
-	ClientRPC_ChangeColor(newColor);
+	//ClientRPC_ChangeColor(newColor);
+	MulticastRPC_ChangeColor(newColor);
 }
 
 void ANetActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
