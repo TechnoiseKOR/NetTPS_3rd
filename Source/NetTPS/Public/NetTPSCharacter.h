@@ -105,6 +105,7 @@ public:
 	UInputAction* TakePistolAction;
 	
 	// 필요속성 : 총 소유 여부, 소유중인 총, 총 검색 범위
+	UPROPERTY(Replicated)
 	bool bHasPistol = false;
 	
 	// 소유중인 총
@@ -206,6 +207,26 @@ public:
 	virtual void Tick(float DeltaSeconds) override;
 	// 네트워크 상태로그 출력함수
 	void PrintNetLog();
+	
+	//---------------------- Multiplayer 요소들 ----------------------
+public:
+	UFUNCTION(Server, Reliable)
+	void ServerRPC_TakePistol();
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastRPC_TakePistol(AActor* pistolActor);
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	
 };
 

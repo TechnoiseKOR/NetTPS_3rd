@@ -22,7 +22,7 @@ protected:
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-	
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	
 public:
 	UPROPERTY(VisibleAnywhere)
@@ -45,10 +45,28 @@ public:
 	UFUNCTION()
 	void OnRep_RotYaw();
 	
+	float currentTime;
+	float lastTime;
+	
+	
+public:
+	UPROPERTY()
+	class UMaterialInstanceDynamic* Mat;
+	// 재질에 동기화될 색상
+	UPROPERTY(ReplicatedUsing=OnRep_ChangeMatColor)
+	FLinearColor MatColor;
+	UFUNCTION()
+	void OnRep_ChangeMatColor();
 	
 	
 	
-	
+public:
+	UFUNCTION(Server, Reliable)
+	void ServerRPC_ChangeColor(const FLinearColor newColor);
+	UFUNCTION(Client, Unreliable)
+	void ClientRPC_ChangeColor(const FLinearColor newColor);
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastRPC_ChangeColor(const FLinearColor newColor);
 	
 	
 	

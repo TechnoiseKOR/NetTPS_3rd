@@ -17,10 +17,13 @@
 #include "Blueprint/UserWidget.h"
 #include "Components/WidgetComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Net/UnrealNetwork.h"
 
 ANetTPSCharacter::ANetTPSCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
+	bReplicates = true;
+	SetReplicateMovement(true);
 	
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
@@ -215,40 +218,7 @@ void ANetTPSCharacter::TakePistol(const FInputActionValue& Value)
 		return;
 	}
 	
-	// 2. 월드에 있는 총을 모두 조사한다.
-	for ( auto pistolActor : pistolActors )
-	{
-		// 3. 만약 총의 소유자가 있다면 검사하지 않는다.
-		if ( pistolActor->GetOwner() != nullptr )
-		{
-			continue;
-		}
-
-		// 4. 총과의 거리를 구한다.
-		float Distance = FVector::Dist(GetActorLocation(), pistolActor->GetActorLocation());
-		
-		// 5. 거리가 범위 안에 있다면
-		if ( Distance > DistanceToGun )
-		{
-			continue;
-		}
-		
-		// 6. 소유중인 총으로 등록
-		ownedPistol = pistolActor;
-		
-		// 7. 총의 소유자를 자신으로 등록
-		ownedPistol->SetOwner(this);
-		
-		// 8. 총 소유 상태로 변경
-		bHasPistol = true;
-		
-		AttachPistol(pistolActor);
-		
-		break;
-	}
-	
-	
-	
+	ServerRPC_TakePistol();	
 }
 
 void ANetTPSCharacter::AttachPistol(AActor* pistolActor)
@@ -261,7 +231,11 @@ void ANetTPSCharacter::AttachPistol(AActor* pistolActor)
 	auto meshComp = pistolActor->GetComponentByClass<UStaticMeshComponent>();
 	meshComp->SetSimulatePhysics(false);
 	meshComp->AttachToComponent(GunComp, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
-	mainUI->ShowCrosshair(true);
+	
+	if ( IsLocallyControlled() && mainUI )
+	{
+		mainUI->ShowCrosshair(true);		
+	}
 }
 
 void ANetTPSCharacter::ReleasePistol(const FInputActionValue& Value)
@@ -472,8 +446,55 @@ void ANetTPSCharacter::PrintNetLog()
 	*/
 }
 
+void ANetTPSCharacter::MulticastRPC_TakePistol_Implementation(
+	AActor* pistolActor)
+{
+	// 총 붙이기
+	AttachPistol(pistolActor);
+}
+
+void ANetTPSCharacter::ServerRPC_TakePistol_Implementation()
+{	
+	// 2. 월드에 있는 총을 모두 조사한다.
+	for ( auto pistolActor : pistolActors )
+	{
+		// 3. 만약 총의 소유자가 있다면 검사하지 않는다.
+		if ( pistolActor->GetOwner() != nullptr )
+		{
+			continue;
+		}
+
+		// 4. 총과의 거리를 구한다.
+		float Distance = FVector::Dist(GetActorLocation(), pistolActor->GetActorLocation());
+		
+		// 5. 거리가 범위 안에 있다면
+		if ( Distance > DistanceToGun )
+		{
+			continue;
+		}
+		
+		// 6. 소유중인 총으로 등록
+		ownedPistol = pistolActor;
+		
+		// 7. 총의 소유자를 자신으로 등록
+		ownedPistol->SetOwner(this);
+		
+		// 8. 총 소유 상태로 변경
+		bHasPistol = true;
+		
+		MulticastRPC_TakePistol(pistolActor);		
+		
+		break;
+	}
+}
 
 
+void ANetTPSCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	
+	DOREPLIFETIME(ANetTPSCharacter,bHasPistol);	
+}
 
 
 

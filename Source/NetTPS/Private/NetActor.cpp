@@ -15,6 +15,9 @@ ANetActor::ANetActor()
 	PrimaryActorTick.bCanEverTick = true;
 	bReplicates = true;
 	
+	// 대역폭 조정
+	NetUpdateFrequency = 1.0f;
+	
 	meshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComp"));
 	RootComponent = meshComp;
 	meshComp->SetRelativeScale3D(FVector(0.5f));
@@ -25,6 +28,19 @@ ANetActor::ANetActor()
 void ANetActor::BeginPlay()
 {
 	Super::BeginPlay();
+	
+	Mat = meshComp->CreateDynamicMaterialInstance(0);
+	if ( HasAuthority() )
+	{
+		FTimerHandle handle;
+		GetWorldTimerManager().SetTimer(handle, 
+			FTimerDelegate::CreateLambda([&]
+			{
+				FLinearColor MatColor = FLinearColor(FMath::RandRange(0.0f, 0.3f), FMath::RandRange(0.0f, 0.3f), FMath::RandRange(0.0f, 0.3f), 1.0f);
+				//OnRep_ChangeMatColor();
+				ServerRPC_ChangeColor(MatColor);
+			}), 1, true);
+	}
 	
 }
 
@@ -45,7 +61,36 @@ void ANetActor::Tick(float DeltaTime)
 	}
 	else
 	{
-				
+		// 경과시간증가		
+		currentTime += DeltaTime;
+		
+		// 0으로 나눠지지 않도록 lastTime 값 체크
+		if ( lastTime < KINDA_SMALL_NUMBER)
+		{
+			return;
+		}
+		
+		// 이전경과시간과 현재 경과시간의 비율계산
+		float lerpRatio = currentTime / lastTime;
+		// 이전 경과시간 만큼 회전할 것으로 새로운 회전값 계산
+		float newYaw = RotYaw + 50.0f * lastTime;
+		// 예측되는 값으로 진행된 시간만큼 보간처리
+		float lerpYaw = FMath::Lerp(RotYaw, newYaw, lerpRatio);
+		
+		// 최종 적용
+		FRotator CurRot = GetActorRotation();
+		CurRot.Yaw = lerpYaw;
+		SetActorRotation(CurRot);
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
 	}	
 	
 	
@@ -103,6 +148,45 @@ void ANetActor::OnRep_RotYaw()
 	FRotator NewRot = GetActorRotation();
 	NewRot.Yaw = RotYaw;
 	SetActorRotation(NewRot);
+	// 업데이트된 경과시간 저장
+	lastTime = currentTime;
+	// 경과시간 초기화
+	currentTime = 0.0f;
+}
+
+// 색상동기화
+void ANetActor::OnRep_ChangeMatColor()
+{
+	if ( Mat )
+	{
+		Mat->SetVectorParameterValue(TEXT("FloorColor"), MatColor);
+	}
+}
+
+void ANetActor::MulticastRPC_ChangeColor_Implementation(
+	const FLinearColor newColor)
+{
+}
+
+void ANetActor::ClientRPC_ChangeColor_Implementation(
+	const FLinearColor newColor)
+{
+	if ( Mat )
+	{
+		Mat->SetVectorParameterValue(TEXT("FloorColor"), newColor);
+	}
+}
+
+void ANetActor::ServerRPC_ChangeColor_Implementation(
+	const FLinearColor newColor)
+{
+	/*
+	if ( Mat )
+	{
+		Mat->SetVectorParameterValue(TEXT("FloorColor"), newColor);
+	}
+	*/
+	ClientRPC_ChangeColor(newColor);
 }
 
 void ANetActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -110,6 +194,7 @@ void ANetActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetim
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	
 	DOREPLIFETIME(ANetActor, RotYaw);
+	DOREPLIFETIME(ANetActor, MatColor);
 }
 
 
