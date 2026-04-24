@@ -37,6 +37,11 @@ void UMainUI::RemoveAllAmmo()
 	}
 }
 
+void UMainUI::PlayDamageAnimation()
+{
+	PlayAnimation(DamageAnim);
+}
+
 
 
 

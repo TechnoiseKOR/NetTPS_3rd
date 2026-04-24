@@ -166,8 +166,11 @@ public:
 	UPROPERTY(EditAnywhere, Category="Bullet")
 	int32 MaxBulletCount = 10;
 	// 남은 총알개수
+	UPROPERTY(ReplicatedUsing=OnRep_BulletCount)
 	int32 BulletCount = MaxBulletCount;
 	
+	UFUNCTION()
+	void OnRep_BulletCount();
 	
 	// 재장전에서 사용할 입력액션
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Input")
@@ -185,8 +188,12 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="HP")
 	float MaxHP = 3.0f;
 	// 현재 체력
-	UPROPERTY(BlueprintReadOnly, Category="HP")
+	UPROPERTY(ReplicatedUsing=OnRep_HP, BlueprintReadOnly, Category="HP")
 	float hp = MaxHP;
+	
+	UFUNCTION()
+	void OnRep_HP();
+	
 	
 	__declspec(property(get=GetHP, put=SetHP)) float HP;
 	float GetHP();
@@ -202,6 +209,10 @@ public:
 	// 사망여부
 	bool isDead = false;
 	
+	// 카메라셰이크
+	UPROPERTY(EditDefaultsOnly, Category="UI")
+	TSubclassOf<class UCameraShakeBase> damageCameraShake;
+	
 	
 public:
 	virtual void Tick(float DeltaSeconds) override;
@@ -215,11 +226,23 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastRPC_TakePistol(AActor* pistolActor);
 	
+	// 총놓기 RPC
+	UFUNCTION(Server, Reliable)
+	void ServerRPC_ReleasePistol();
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastRPC_ReleasePistol(AActor* pistolActor);
 	
+	// 총쏘기
+	UFUNCTION(Server, Reliable)
+	void ServerRPC_Fire();
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastRPC_Fire(bool bHit, const FHitResult& hitInfo);
 	
-	
-	
-	
+	// 재장전
+	UFUNCTION(Server, Reliable)
+	void ServerRPC_Reload();
+	UFUNCTION(Client, Reliable)
+	void ClientRPC_Reload();
 	
 	
 	
