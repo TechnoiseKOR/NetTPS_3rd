@@ -13,8 +13,10 @@
 #include "InputActionValue.h"
 #include "MainUI.h"
 #include "NetPlayerAnimInstance.h"
+#include "NetPlayerController.h"
 #include "NetTPS.h"
 #include "Blueprint/UserWidget.h"
+#include "Components/HorizontalBox.h"
 #include "Components/WidgetComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
@@ -100,7 +102,11 @@ void ANetTPSCharacter::BeginPlay()
 		}
 	}
 	
-	InitUIWidget();
+	// 클라이언트에서는 컨트롤러가 있을때
+	if ( HasAuthority() == false && IsLocallyControlled() )
+	{
+		InitUIWidget();		
+	}
 	
 	
 	
@@ -241,7 +247,7 @@ void ANetTPSCharacter::AttachPistol(AActor* pistolActor)
 void ANetTPSCharacter::ReleasePistol(const FInputActionValue& Value)
 {
 	// 총을 잡고 있지 않다면 처리하지 않는다.
-	if ( !bHasPistol )
+	if ( !bHasPistol || IsReloading || IsLocallyControlled() == false )
 	{
 		return;
 	}
@@ -313,18 +319,30 @@ void ANetTPSCharacter::Fire(const FInputActionValue& Value)
 
 void ANetTPSCharacter::InitUIWidget()
 {
+	PRINTLOG(TEXT("[%s] Begin"), Controller ? TEXT("PLAYER") : TEXT("Not Player"));
+	
 	// Player 가 제어중이 아니라면 처리하지 않는다.
-	auto pc = Cast<APlayerController>(Controller);
+	auto pc = Cast<ANetPlayerController>(Controller);
 	if ( pc == nullptr )
 	{
 		return;
 	}
 	
-	if ( mainUIWidget )
+	if ( pc->mainUIWidget )
 	{
-		mainUI = Cast<UMainUI>(CreateWidget(GetWorld(), mainUIWidget));
+		if ( pc->mainUI == nullptr )
+		{
+			pc->mainUI = Cast<UMainUI>(CreateWidget(GetWorld(), pc->mainUIWidget));			
+		}
+		mainUI = pc->mainUI;
 		mainUI->AddToViewport();
 		mainUI->ShowCrosshair(false);
+		
+		hp = MaxHP;
+		mainUI->HP = 1.0f;
+		
+		// 총알 모두 제거
+		mainUI->RemoveAllAmmo();
 		
 		BulletCount = MaxBulletCount;
 		// 총알추가
@@ -371,6 +389,16 @@ void ANetTPSCharacter::InitAmmoUI()
 
 void ANetTPSCharacter::OnRep_HP()
 {
+	// 죽음처리
+	if ( HP <= 0.0f )
+	{
+		isDead = true;
+		ReleasePistol(FInputActionValue());
+		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		GetCharacterMovement()->DisableMovement();
+	}	
+	
 	// UI 에 할당할 퍼센트 계산
 	float percent = hp / MaxHP;
 	
@@ -424,6 +452,16 @@ void ANetTPSCharacter::DamageProcess()
 	
 }
 
+void ANetTPSCharacter::DieProcess()
+{
+	auto pc = Cast<APlayerController>(Controller);
+	pc->SetShowMouseCursor(true);
+	GetFollowCamera()->PostProcessSettings.ColorSaturation = FVector4(0.0f, 0.0f, 0.0f, 1.0f);
+	
+	// Die UI 표시
+	mainUI->GameoverUI->SetVisibility(ESlateVisibility::Visible);
+}
+
 void ANetTPSCharacter::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
@@ -455,6 +493,21 @@ void ANetTPSCharacter::PrintNetLog()
 	
 	DrawDebugString( GetWorld(), GetActorLocation() + FVector::UpVector * 100.0f, logStr, nullptr, FColor::White, 0, true, 1);
 	*/
+}
+
+void ANetTPSCharacter::PossessedBy(AController* NewController)
+{
+	PRINTLOG(TEXT("Begin"));
+	
+	Super::PossessedBy(NewController);
+	
+	if ( IsLocallyControlled() )
+	{
+		InitUIWidget();
+	}
+	
+	PRINTLOG(TEXT("End"));
+	
 }
 
 void ANetTPSCharacter::ClientRPC_Reload_Implementation()

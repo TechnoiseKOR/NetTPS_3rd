@@ -153,8 +153,8 @@ public:
 	class UParticleSystem* GunEffect;
 	
 	// 사용할 위젯 클래스
-	UPROPERTY(EditDefaultsOnly, Category="UI")
-	TSubclassOf<class UMainUI> mainUIWidget;
+	//UPROPERTY(EditDefaultsOnly, Category="UI")
+	//TSubclassOf<class UMainUI> mainUIWidget;
 	// mainUIWidget 으로 부터 만들어진 인스턴스
 	UPROPERTY()
 	class UMainUI* mainUI;
@@ -213,11 +213,21 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category="UI")
 	TSubclassOf<class UCameraShakeBase> damageCameraShake;
 	
+	// 죽음처리
+	void DieProcess();
+	
 	
 public:
 	virtual void Tick(float DeltaSeconds) override;
 	// 네트워크 상태로그 출력함수
 	void PrintNetLog();
+	
+	
+	virtual void PossessedBy(AController* NewController) override;
+	
+	
+	
+	
 	
 	//---------------------- Multiplayer 요소들 ----------------------
 public:

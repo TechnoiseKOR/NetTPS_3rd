@@ -52,6 +52,9 @@ public:
 	UFUNCTION()
 	void AnimNotify_OnReloadFinish();
 	
+	UFUNCTION()
+	void AnimNotify_DieEnd();
+	
 	
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="MyAnimSettings")
