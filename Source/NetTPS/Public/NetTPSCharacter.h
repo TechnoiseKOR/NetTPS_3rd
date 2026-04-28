@@ -162,6 +162,9 @@ public:
 	// UI 초기화 함수
 	void InitUIWidget();
 	
+	UFUNCTION(Client, Reliable)
+	void ClientRPC_InitUIWidget();
+	
 	// 최대 총알개수
 	UPROPERTY(EditAnywhere, Category="Bullet")
 	int32 MaxBulletCount = 10;

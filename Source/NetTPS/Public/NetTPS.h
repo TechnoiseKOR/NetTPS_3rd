@@ -11,7 +11,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogNetTPS, Log, All);
 #define REMOTEROLE (UEnum::GetValueAsString<ENetRole>(GetRemoteRole()))
 
 
-#define NETMODE (GetNetMode()==ENetMode::NM_Client?TEXT("CLIENT") : GetNetMode()==NM_Standalone?TEXT("Standalone"):TEXT("Server"))
+#define NETMODE (GetWorld()->GetNetMode()==ENetMode::NM_Client?TEXT("CLIENT") : GetWorld()->GetNetMode()==NM_Standalone?TEXT("Standalone"):TEXT("Server"))
 
 #define CALLINFO (FString(__FUNCTION__) + TEXT("(") + FString::FromInt(__LINE__) + TEXT(")"))
 #define PRINTLOG(fmt, ...) UE_LOG(LogNetTPS, Warning, TEXT("[%s]%s : %s"),NETMODE, *CALLINFO, *FString::Printf(fmt, ##__VA_ARGS__))															

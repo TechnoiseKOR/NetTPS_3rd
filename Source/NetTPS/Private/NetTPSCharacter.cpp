@@ -103,9 +103,9 @@ void ANetTPSCharacter::BeginPlay()
 	}
 	
 	// 클라이언트에서는 컨트롤러가 있을때
-	if ( HasAuthority() == false && IsLocallyControlled() )
+	//if ( HasAuthority() == false && IsLocallyControlled() )
 	{
-		InitUIWidget();		
+	//	InitUIWidget();		
 	}
 	
 	
@@ -359,6 +359,14 @@ void ANetTPSCharacter::InitUIWidget()
 	}	
 }
 
+void ANetTPSCharacter::ClientRPC_InitUIWidget_Implementation()
+{
+	if ( IsLocallyControlled() )
+	{
+		InitUIWidget();		
+	}
+}
+
 void ANetTPSCharacter::OnRep_BulletCount()
 {
 	if ( mainUI )
@@ -501,10 +509,11 @@ void ANetTPSCharacter::PossessedBy(AController* NewController)
 	
 	Super::PossessedBy(NewController);
 	
-	if ( IsLocallyControlled() )
+	//if ( IsLocallyControlled() )
 	{
-		InitUIWidget();
+//		InitUIWidget();
 	}
+	ClientRPC_InitUIWidget();
 	
 	PRINTLOG(TEXT("End"));
 	

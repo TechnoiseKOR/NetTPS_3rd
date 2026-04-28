@@ -25,7 +25,8 @@ public:
 public:
 	UFUNCTION(Server, Reliable)
 	void ServerRPC_RespawnPlayer();
-	
+	UFUNCTION(Server, Reliable)
+	void ServerRPC_ChangeToSpectator();
 	
 	
 	// 사용할 위젯 클래스
