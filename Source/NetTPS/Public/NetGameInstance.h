@@ -31,6 +31,14 @@ public:
 	void OnCreateSessionComplete(FName SessionName, bool bWasSuccessful);
 	
 	
+public:	// ------------- 방검색 -------------
+	TSharedPtr<FOnlineSessionSearch> sessionSearch;
+	void FindOtherSessions();
+	
+	void OnFindSessionsComplete(bool bWasSuccessful);
+	
+	
+	
 };
 
 
