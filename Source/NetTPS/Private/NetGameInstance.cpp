@@ -6,6 +6,7 @@
 #include "NetTPS.h"
 #include "OnlineSubsystem.h"
 #include "OnlineSessionSettings.h"
+#include "Compression/lz4.h"
 #include "Online/OnlineSessionNames.h"
 
 void UNetGameInstance::Init()
@@ -20,7 +21,7 @@ void UNetGameInstance::Init()
 		sessionInterface->OnCreateSessionCompleteDelegates.AddUObject(this, &UNetGameInstance::OnCreateSessionComplete);
 		sessionInterface->OnFindSessionsCompleteDelegates.AddUObject(this, &UNetGameInstance::OnFindSessionsComplete);
 		
-		
+		/*
 		FTimerHandle handle;
 		GetWorld()->GetTimerManager().SetTimer(handle,
 			FTimerDelegate::CreateLambda([&]
@@ -29,6 +30,7 @@ void UNetGameInstance::Init()
 				FindOtherSessions();
 			}			
 			), 2, false	);
+			*/
 		
 	}
 }
@@ -112,31 +114,41 @@ void UNetGameInstance::OnFindSessionsComplete(bool bWasSuccessful)
 	PRINTLOG(TEXT("Search Result Count : %d"), results.Num());
 	
 	// 유효성 체크
-	for ( auto sr : results )
+	for ( int i = 0; i < results.Num(); i++ )	
+	//for ( auto sr : results )
 	{
+		auto sr = results[i];
 		if ( sr.IsValid() == false )
 		{
 			continue;
 		}
 		
-		FString roomName;
-		sr.Session.SessionSettings.Get(FName("ROOM_NAME"), roomName);
-		FString hostName;
-		sr.Session.SessionSettings.Get(FName("HOST_NAME"), hostName);
+		// 세션정보 구조체선언
+		FSessionInfo sessionInfo;
+		sessionInfo.index = i;
+				
+		sr.Session.SessionSettings.Get(FName("ROOM_NAME"), sessionInfo.roomName);		
+		sr.Session.SessionSettings.Get(FName("HOST_NAME"), sessionInfo.hostName);
+		
 		// 세션주인(방장) 이름
-		FString userName = sr.Session.OwningUserName;
+		//FString userName = sr.Session.OwningUserName;
+		
 		// 입장가능한 플레이어 수
 		int32 maxPlayerCount = sr.Session.SessionSettings.NumPublicConnections;
 		// 현재 입장한 플레이어 수 ( 최대인원수 - 현재입장가능한 수 )
 		int32 currentPlayerCount = maxPlayerCount - sr.Session.NumOpenPublicConnections;
 		
+		sessionInfo.playerCount = FString::Printf(TEXT("(%d/%d)"), currentPlayerCount, maxPlayerCount);;
+		
 		// 핑 정보
-		int32 pingSpeed = sr.PingInMs;
+		sessionInfo.pingSpeed = sr.PingInMs;
 		
-		PRINTLOG(TEXT("%s : %s(%s) - (%d/%d), %dms"), *roomName, *hostName, *userName, currentPlayerCount, maxPlayerCount, pingSpeed);
+		PRINTLOG(TEXT("%s"), *sessionInfo.ToString());
+		//PRINTLOG(TEXT("%s : %s(%s) - (%d/%d), %dms"), *roomName, *hostName, *userName, currentPlayerCount, maxPlayerCount, pingSpeed);
 		
-	}
-	
+		// 델리게이트로 위젯에 알려주기		
+		onSearchCompleted.Broadcast(sessionInfo);		
+	}	
 }
 
 

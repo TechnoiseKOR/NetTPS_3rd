@@ -7,6 +7,34 @@
 #include "Interfaces/OnlineSessionInterface.h"
 #include "NetGameInstance.generated.h"
 
+USTRUCT(BlueprintType)
+struct FSessionInfo
+{
+	GENERATED_BODY()
+	
+	UPROPERTY(BlueprintReadOnly)
+	FString roomName;	
+	UPROPERTY(BlueprintReadOnly)
+	FString hostName;
+	UPROPERTY(BlueprintReadOnly)
+	FString playerCount;
+	UPROPERTY(BlueprintReadOnly)
+	int32 pingSpeed;
+	UPROPERTY(BlueprintReadOnly)
+	int32 index;
+	
+	inline FString ToString()
+	{
+		return  FString::Printf(TEXT("[%d]%s : %s - %s, %dms"), index, *roomName, *hostName, *playerCount, pingSpeed);
+	}
+};
+
+
+
+// 세션검색 끝났을 때 호출될 델리게이트
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FSearchSignature, const FSessionInfo&, sessionInfo);
+
+
 /**
  * 
  */
@@ -37,6 +65,8 @@ public:	// ------------- 방검색 -------------
 	
 	void OnFindSessionsComplete(bool bWasSuccessful);
 	
+	// 방찾기완료 콜백을 등록할 델리게이트
+	FSearchSignature onSearchCompleted;
 	
 	
 };
