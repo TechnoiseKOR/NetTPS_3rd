@@ -213,6 +213,16 @@ void ANetTPSCharacter::DoJumpEnd()
 	StopJumping();
 }
 
+void ANetTPSCharacter::PostNetInit()
+{
+	Super::PostNetInit();
+	
+	if ( bHasPistol && ownedPistol )
+	{
+		AttachPistol(ownedPistol);
+	}
+}
+
 void ANetTPSCharacter::TakePistol(const FInputActionValue& Value)
 {
 	// 총을 소유하지 않고 있다면 범위 안에 있는 총을 잡는다.
@@ -661,6 +671,7 @@ void ANetTPSCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME(ANetTPSCharacter,bHasPistol);
 	DOREPLIFETIME(ANetTPSCharacter,BulletCount);
 	DOREPLIFETIME(ANetTPSCharacter,hp);
+	DOREPLIFETIME(ANetTPSCharacter,ownedPistol);
 }
 
 

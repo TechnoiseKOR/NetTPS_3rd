@@ -7,6 +7,7 @@
 #include "OnlineSubsystem.h"
 #include "OnlineSessionSettings.h"
 #include "Compression/lz4.h"
+#include "Kismet/GameplayStatics.h"
 #include "Online/OnlineSessionNames.h"
 
 void UNetGameInstance::Init()
@@ -20,6 +21,7 @@ void UNetGameInstance::Init()
 		
 		sessionInterface->OnCreateSessionCompleteDelegates.AddUObject(this, &UNetGameInstance::OnCreateSessionComplete);
 		sessionInterface->OnFindSessionsCompleteDelegates.AddUObject(this, &UNetGameInstance::OnFindSessionsComplete);
+		sessionInterface->OnJoinSessionCompleteDelegates.AddUObject(this, &UNetGameInstance::OnJoinSessionComplete);
 		
 		/*
 		FTimerHandle handle;
@@ -82,10 +84,21 @@ void UNetGameInstance::OnCreateSessionComplete(FName SessionName,
 	bool bWasSuccessful)
 {
 	PRINTLOG(TEXT("Session Name : %s, bWasSuccessful : %d"), *mySessionName, bWasSuccessful);
+	if ( bWasSuccessful )
+	{
+		UGameplayStatics::OpenLevel(GetWorld(), FName(TEXT("/Game/Net/Maps/LobbyMap")), true, TEXT("listen?port=7777"));		
+	}
+}
+
+void UNetGameInstance::GameToStart()
+{
+	GetWorld()->ServerTravel(TEXT("/Game/Net/Maps/BattleMap?listen?port=7777"));
 }
 
 void UNetGameInstance::FindOtherSessions()
 {
+	onSearchState.Broadcast(true);
+	
 	sessionSearch = MakeShareable(new FOnlineSessionSearch());
 	
 	// 1. 세션 검색 조건 설정
@@ -149,6 +162,35 @@ void UNetGameInstance::OnFindSessionsComplete(bool bWasSuccessful)
 		// 델리게이트로 위젯에 알려주기		
 		onSearchCompleted.Broadcast(sessionInfo);		
 	}	
+	
+	onSearchState.Broadcast(false);
+}
+
+void UNetGameInstance::JoinSelectedSession(int32 index)
+{
+	auto sr = sessionSearch->SearchResults;
+	sessionInterface->JoinSession(0, FName(mySessionName), sr[index]); 
+}
+
+void UNetGameInstance::OnJoinSessionComplete(FName sessionName,
+	EOnJoinSessionCompleteResult::Type result)
+{
+	if ( result == EOnJoinSessionCompleteResult::Type::Success )
+	{
+		auto pc = GetWorld()->GetFirstPlayerController();
+		FString url;
+		sessionInterface->GetResolvedConnectString(sessionName, url);
+		
+		PRINTLOG(TEXT("Join URL : %s"), *url);
+		if ( url.IsEmpty() == false )
+		{
+			pc->ClientTravel(url, ETravelType::TRAVEL_Absolute);
+		}
+	}
+	else
+	{
+		PRINTLOG(TEXT("Join Session Failed : %d"), result);
+	}
 }
 
 

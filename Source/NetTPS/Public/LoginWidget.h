@@ -51,6 +51,11 @@ public:
 	// 방 검색 버튼
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
 	class UButton* btn_find;
+		
+	// 검색중 메세지
+	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
+	class UTextBlock* txt_findingMsg;
+	
 	
 	UFUNCTION()
 	void BackToMain();
@@ -58,6 +63,13 @@ public:
 	// 방찾기 버튼 클릭시 호출될 콜백	
 	UFUNCTION()
 	void OnClickedFindSession();
+	
+	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
+	class UButton* btn_GameToStart;
+	
+	UFUNCTION()
+	void OnClickedGameToStart();
+	
 	
 	
 	
@@ -73,7 +85,9 @@ public:
 	UFUNCTION()
 	void AddSlotWidget(const struct FSessionInfo& sessionInfo);
 	
-	
+	// 방찾기 상태 이벤트 콜백
+	UFUNCTION()
+	void OnChangeButtonEnable(bool bIsSearching);
 	
 	
 	

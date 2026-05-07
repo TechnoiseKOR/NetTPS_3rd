@@ -33,7 +33,8 @@ struct FSessionInfo
 
 // 세션검색 끝났을 때 호출될 델리게이트
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FSearchSignature, const FSessionInfo&, sessionInfo);
-
+// 세션검색 상태 델리게이트
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FSearchStateSignature, bool, bIsSearching);
 
 /**
  * 
@@ -59,6 +60,9 @@ public:
 	void OnCreateSessionComplete(FName SessionName, bool bWasSuccessful);
 	
 	
+	void GameToStart();
+	
+	
 public:	// ------------- 방검색 -------------
 	TSharedPtr<FOnlineSessionSearch> sessionSearch;
 	void FindOtherSessions();
@@ -68,6 +72,15 @@ public:	// ------------- 방검색 -------------
 	// 방찾기완료 콜백을 등록할 델리게이트
 	FSearchSignature onSearchCompleted;
 	
+	// 방찾기상태 콜백 델리게이트
+	FSearchStateSignature onSearchState;
+	
+	
+	// 세션(방) 입장
+	void JoinSelectedSession(int32 index);
+	
+	// 세션 입장 콜백
+	void OnJoinSessionComplete(FName sessionName, EOnJoinSessionCompleteResult::Type result);
 	
 };
 

@@ -20,6 +20,7 @@ void ULoginWidget::SwitchCreatePanel()
 void ULoginWidget::SwitchFindPanel()
 {
 	WidgetSwitcher->SetActiveWidgetIndex(2);
+	OnClickedFindSession();
 }
 
 void ULoginWidget::BackToMain()
@@ -38,6 +39,14 @@ void ULoginWidget::OnClickedFindSession()
 	}
 }
 
+void ULoginWidget::OnClickedGameToStart()
+{
+	if ( gi != nullptr )
+	{
+		gi->GameToStart();
+	}
+}
+
 void ULoginWidget::AddSlotWidget(const struct FSessionInfo& sessionInfo)
 {
 	auto slot = CreateWidget<USessionSlotWidget>(this, sessionInfoWidget);
@@ -46,12 +55,29 @@ void ULoginWidget::AddSlotWidget(const struct FSessionInfo& sessionInfo)
 	scroll_roomList->AddChild(slot);
 }
 
+void ULoginWidget::OnChangeButtonEnable(bool bIsSearching)
+{
+	btn_find->SetIsEnabled(!bIsSearching);
+	
+	if ( bIsSearching )
+	{
+		// 검색중 보이도록 처리
+		txt_findingMsg->SetVisibility(ESlateVisibility::Visible);
+	}
+	else
+	{
+		// 검색이 끝났으니 사라지도록 처리
+		txt_findingMsg->SetVisibility(ESlateVisibility::Hidden);
+	}
+}
+
 void ULoginWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 	
 	gi = Cast<UNetGameInstance>(GetWorld()->GetGameInstance());
 	gi->onSearchCompleted.AddDynamic(this, &ULoginWidget::AddSlotWidget);
+	gi->onSearchState.AddDynamic(this, &ULoginWidget::OnChangeButtonEnable);
 	
 	btn_createRoom->OnClicked.AddDynamic(this, &ULoginWidget::CreateRoom);
 	slider_playerCount->OnValueChanged.AddDynamic(this, &ULoginWidget::OnValueChanged);
@@ -63,6 +89,7 @@ void ULoginWidget::NativeConstruct()
 	btn_back_1->OnClicked.AddDynamic(this, &ULoginWidget::BackToMain);
 	
 	btn_find->OnClicked.AddDynamic(this, &ULoginWidget::OnClickedFindSession);
+	btn_GameToStart->OnClicked.AddDynamic(this, &ULoginWidget::OnClickedGameToStart);
 }
 
 void ULoginWidget::CreateRoom()

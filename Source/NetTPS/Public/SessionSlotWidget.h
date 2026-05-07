@@ -27,7 +27,16 @@ public:
 	int32 sessionNumber;
 	
 	void Set(const struct FSessionInfo& sessionInfo);
+
 	
+public:
+	// ----------- 세션조인 ---------------
+	UPROPERTY(BlueprintReadWrite, meta=(BindWidget))
+	class UButton* btn_join;
+	UFUNCTION()
+	void JoinSession();
+	
+	virtual void NativeConstruct() override;
 };
 
 
