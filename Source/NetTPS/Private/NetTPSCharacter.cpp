@@ -14,6 +14,7 @@
 #include "MainUI.h"
 #include "NetPlayerAnimInstance.h"
 #include "NetPlayerController.h"
+#include "NetPlayerState.h"
 #include "NetTPS.h"
 #include "Blueprint/UserWidget.h"
 #include "Components/HorizontalBox.h"
@@ -145,6 +146,9 @@ void ANetTPSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		// Reload
 		EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Started, this, &ANetTPSCharacter::ReloadPistol);
 		
+		// Voice Chat
+		EnhancedInputComponent->BindAction(voiceAction, ETriggerEvent::Started, this, &ANetTPSCharacter::StartVoiceChat);
+		EnhancedInputComponent->BindAction(voiceAction, ETriggerEvent::Completed, this, &ANetTPSCharacter::StopVoiceChat);
 		
 	}
 	else
@@ -529,6 +533,33 @@ void ANetTPSCharacter::PossessedBy(AController* NewController)
 	
 }
 
+void ANetTPSCharacter::StartVoiceChat()
+{
+	GetController<ANetPlayerController>()->StartTalking();
+}
+
+void ANetTPSCharacter::StopVoiceChat()
+{
+	GetController<ANetPlayerController>()->StopTalking();
+}
+
+void ANetTPSCharacter::MulticastRPC_SendMsg_Implementation(const FString& msg)
+{
+	auto pc = Cast<ANetPlayerController>(GetWorld()->GetFirstPlayerController());
+	if ( pc )
+	{
+		if ( pc->mainUI )
+		{
+			pc->mainUI->ReceiveMsg(msg);
+		}
+	}
+}
+
+void ANetTPSCharacter::ServerRPC_SendMsg_Implementation(const FString& msg)
+{
+	MulticastRPC_SendMsg(msg);
+}
+
 void ANetTPSCharacter::ClientRPC_Reload_Implementation()
 {
 	if ( mainUI )
@@ -590,6 +621,10 @@ void ANetTPSCharacter::ServerRPC_Fire_Implementation()
 		if ( otherPlayer )
 		{
 			otherPlayer->DamageProcess();
+			
+			// 스코어 처리
+			auto ps = Cast<ANetPlayerState>(GetPlayerState());
+			ps->SetScore( ps->GetScore() + 1 );
 		}		
 	}
 	

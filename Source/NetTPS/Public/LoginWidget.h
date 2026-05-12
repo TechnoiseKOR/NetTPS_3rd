@@ -56,6 +56,10 @@ public:
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
 	class UTextBlock* txt_findingMsg;
 	
+	// 사용자 이름
+	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
+	class UEditableText* edit_userName;
+	
 	
 	UFUNCTION()
 	void BackToMain();

@@ -69,6 +69,8 @@ public:
 	void MulticastRPC_ChangeColor(const FLinearColor newColor);
 	
 	
+	FTimerHandle handle;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	
 	
 	

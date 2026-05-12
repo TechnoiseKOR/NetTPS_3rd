@@ -57,6 +57,11 @@ public:
 	UPROPERTY(BlueprintReadWrite, meta=(BindWidget))
 	class UButton* btn_exit;
 	
+	// 사용자 목록
+	UPROPERTY(BlueprintReadWrite, meta=(BindWidget))
+	class UTextBlock* txt_users;
+	
+	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 	
 	
 public:
@@ -65,6 +70,31 @@ public:
 	UFUNCTION()
 	void OnRetry();
 	
+	UFUNCTION()
+	void OnExit();
+	
+	
+	
+	
+	// --------------- 채팅 -----------------
+public:
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<class UChatWidget> chatWidget;
+	
+	UPROPERTY(BlueprintReadWrite, meta=(BindWidget))
+	class UScrollBox* scroll_msgList;
+	
+	UPROPERTY(BlueprintReadWrite, meta=(BindWidget))
+	class UEditableText* edit_input;
+	
+	UPROPERTY(BlueprintReadWrite, meta=(BindWidget))
+	class UButton* btn_send;
+	
+	
+	UFUNCTION()
+	void SendMsg();
+	
+	void ReceiveMsg(const FString& msg);
 	
 	
 };

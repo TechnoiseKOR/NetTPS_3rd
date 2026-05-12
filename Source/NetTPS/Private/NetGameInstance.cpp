@@ -3,6 +3,8 @@
 
 #include "NetGameInstance.h"
 
+#include <string>
+
 #include "NetTPS.h"
 #include "OnlineSubsystem.h"
 #include "OnlineSessionSettings.h"
@@ -22,6 +24,7 @@ void UNetGameInstance::Init()
 		sessionInterface->OnCreateSessionCompleteDelegates.AddUObject(this, &UNetGameInstance::OnCreateSessionComplete);
 		sessionInterface->OnFindSessionsCompleteDelegates.AddUObject(this, &UNetGameInstance::OnFindSessionsComplete);
 		sessionInterface->OnJoinSessionCompleteDelegates.AddUObject(this, &UNetGameInstance::OnJoinSessionComplete);
+		sessionInterface->OnDestroySessionCompleteDelegates.AddUObject(this, &UNetGameInstance::OnDestroySessionComplete);
 		
 		/*
 		FTimerHandle handle;
@@ -34,6 +37,11 @@ void UNetGameInstance::Init()
 			), 2, false	);
 			*/
 		
+	}
+	
+	if ( GEngine )
+	{
+		GEngine->OnNetworkFailure().AddUObject(this, &UNetGameInstance::OnNetworkFailure);
 	}
 }
 
@@ -65,10 +73,10 @@ void UNetGameInstance::CreateSession(FString roomName, int32 playerCount)
 	sessionSettings.NumPublicConnections = playerCount;
 	
 	// 7. 커스텀 룸네임 설정
-	sessionSettings.Set(FName("ROOM_NAME"), roomName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
+	sessionSettings.Set(FName("ROOM_NAME"), StringBase64Encode(roomName), EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 	
 	// 8. 호스트네임 설정	
-	sessionSettings.Set(FName("HOST_NAME"), mySessionName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
+	sessionSettings.Set(FName("HOST_NAME"), StringBase64Encode(mySessionName), EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 	
 	
 	// netID
@@ -139,9 +147,14 @@ void UNetGameInstance::OnFindSessionsComplete(bool bWasSuccessful)
 		// 세션정보 구조체선언
 		FSessionInfo sessionInfo;
 		sessionInfo.index = i;
-				
-		sr.Session.SessionSettings.Get(FName("ROOM_NAME"), sessionInfo.roomName);		
-		sr.Session.SessionSettings.Get(FName("HOST_NAME"), sessionInfo.hostName);
+		
+		FString roomName;
+		FString hostName;				
+		sr.Session.SessionSettings.Get(FName("ROOM_NAME"), roomName);		
+		sr.Session.SessionSettings.Get(FName("HOST_NAME"), hostName);
+		
+		sessionInfo.roomName = StringBase64Decode(roomName);
+		sessionInfo.hostName = StringBase64Decode(hostName);
 		
 		// 세션주인(방장) 이름
 		//FString userName = sr.Session.OwningUserName;
@@ -191,6 +204,51 @@ void UNetGameInstance::OnJoinSessionComplete(FName sessionName,
 	{
 		PRINTLOG(TEXT("Join Session Failed : %d"), result);
 	}
+}
+
+void UNetGameInstance::ExitRoom()
+{
+	sessionInterface->DestroySession(FName(*mySessionName));
+}
+
+void UNetGameInstance::OnDestroySessionComplete(FName sessionName,
+	bool bWasSuccessful)
+{
+	auto* pc = GetWorld()->GetFirstPlayerController();
+	FString url = TEXT("/Game/Net/Maps/LobbyMap");
+	pc->ClientTravel(url, TRAVEL_Absolute);
+}
+
+void UNetGameInstance::OnNetworkFailure(UWorld* World, UNetDriver* NetDriver,
+	ENetworkFailure::Type FailureType, const FString& ErrorString)
+{
+	if ( FailureType == ENetworkFailure::Type::ConnectionLost )
+	{
+		ExitRoom();
+	}
+}
+
+bool UNetGameInstance::IsInRoom()
+{
+	FUniqueNetIdPtr netID = GetWorld()->GetFirstLocalPlayerFromController()->GetUniqueNetIdForPlatformUser().GetUniqueNetId();
+	return sessionInterface->IsPlayerInSession(FName(*mySessionName), *netID);
+}
+
+FString UNetGameInstance::StringBase64Encode(const FString& str)
+{
+	// Set 할 때 :: FString -> UTF8(std::string) -> TArray<uint8> -> base64 로 Encode
+	std::string utf8String = TCHAR_TO_UTF8(*str);
+	TArray<uint8> arrayData = TArray<uint8>((uint8*)(utf8String.c_str()), utf8String.length());
+	return FBase64::Encode(arrayData);
+}
+
+FString UNetGameInstance::StringBase64Decode(const FString& str)
+{
+	// Get 할 때 :: base64 로 Decode -> TArray<uint8> -> TCHAR
+	TArray<uint8> arrayData;
+	FBase64::Decode(str, arrayData);
+	std::string utf8String((char*)(arrayData.GetData()), arrayData.Num());
+	return UTF8_TO_TCHAR(utf8String.c_str());
 }
 
 

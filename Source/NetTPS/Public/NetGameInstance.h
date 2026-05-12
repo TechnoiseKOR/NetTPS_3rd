@@ -82,6 +82,28 @@ public:	// ------------- 방검색 -------------
 	// 세션 입장 콜백
 	void OnJoinSessionComplete(FName sessionName, EOnJoinSessionCompleteResult::Type result);
 	
+	
+	void ExitRoom();
+	
+	void OnDestroySessionComplete(FName sessionName, bool bWasSuccessful);
+	
+	void OnNetworkFailure(UWorld* World, UNetDriver* NetDriver, ENetworkFailure::Type FailureType, const FString& ErrorString);
+
+	
+	bool IsInRoom();
+	
+	
+	
+	
+	// 스팀 한글 깨짐
+	// 문자열을 uint8 배열로 만든 후 ASCII 코드로 변환
+	FString StringBase64Encode(const FString& str);
+	FString StringBase64Decode(const FString& str);
+	
+	
+	
+	
+	
 };
 
 

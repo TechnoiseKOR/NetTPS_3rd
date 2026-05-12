@@ -8,6 +8,8 @@
 #include "NetTPSCharacter.h"
 #include <Net/UnrealNetwork.h>
 
+#include "NetGameInstance.h"
+
 // Sets default values
 ANetActor::ANetActor()
 {
@@ -32,13 +34,17 @@ void ANetActor::BeginPlay()
 	Mat = meshComp->CreateDynamicMaterialInstance(0);
 	if ( HasAuthority() )
 	{
-		FTimerHandle handle;
+		auto gi = GetGameInstance<UNetGameInstance>();
+		
 		GetWorldTimerManager().SetTimer(handle, 
-			FTimerDelegate::CreateLambda([&]
+			FTimerDelegate::CreateLambda([&, gi]
 			{
-				FLinearColor MatColor = FLinearColor(FMath::RandRange(0.0f, 0.3f), FMath::RandRange(0.0f, 0.3f), FMath::RandRange(0.0f, 0.3f), 1.0f);
-				//OnRep_ChangeMatColor();
-				ServerRPC_ChangeColor(MatColor);
+				if ( gi->IsInRoom() )
+				{
+					FLinearColor MatColor = FLinearColor(FMath::RandRange(0.0f, 0.3f), FMath::RandRange(0.0f, 0.3f), FMath::RandRange(0.0f, 0.3f), 1.0f);
+					//OnRep_ChangeMatColor();
+					ServerRPC_ChangeColor(MatColor);					
+				}
 			}), 1, true);
 	}
 	
@@ -161,6 +167,13 @@ void ANetActor::OnRep_ChangeMatColor()
 	{
 		Mat->SetVectorParameterValue(TEXT("FloorColor"), MatColor);
 	}
+}
+
+void ANetActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+	
+	GetWorld()->GetTimerManager().ClearTimer(handle);
 }
 
 void ANetActor::MulticastRPC_ChangeColor_Implementation(

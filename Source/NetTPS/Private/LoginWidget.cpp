@@ -14,11 +14,19 @@
 
 void ULoginWidget::SwitchCreatePanel()
 {
+	if ( edit_userName->GetText().IsEmpty() == false )
+	{
+		gi->mySessionName = edit_userName->GetText().ToString();
+	}
 	WidgetSwitcher->SetActiveWidgetIndex(1);
 }
 
 void ULoginWidget::SwitchFindPanel()
 {
+	if ( edit_userName->GetText().IsEmpty() == false )
+	{
+		gi->mySessionName = edit_userName->GetText().ToString();
+	}
 	WidgetSwitcher->SetActiveWidgetIndex(2);
 	OnClickedFindSession();
 }
